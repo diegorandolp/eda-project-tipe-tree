@@ -7,6 +7,8 @@ from sklearn.decomposition import PCA
 from sklearn.datasets import fetch_lfw_people
 import matplotlib.pyplot as plt
 import tempfile
+from sklearn.preprocessing import StandardScaler
+import plotly.express as px
 
 # ---------ESTILOS----------
 def titulo_gud(y, x):
@@ -106,19 +108,76 @@ if "DATASET_CARGADO" not in st.session_state:
     with st.spinner("Cargando dataset de rostros..."):
         st.session_state.DATASET_CARGADO = fetch_lfw_people(min_faces_per_person=0, resize=1)
 
+
+
+# functions_f.ArkadeModel model(dataPath, distance, radio, k, num_data_points, num_search, outputPath);
+
+def open_dataset(dataset_path): 
+    data = pd.read_csv(dataset_path, sep="\t", header=None)
+    return data
+
+def open_outputPath(outputPath):
+    df = pd.read_csv(outputPath, sep="\t", header=None, names=["fila", "valor"])
+    return df
+
+
+def take_fil(df_data, df_res): 
+    selected = df_data.iloc[df_res["fila"].values]
+    return selected
+
+def plot_3d(df, title="Distribución 3D"):
+    df_plot = df.copy()
+    df_plot.columns = ['x', 'y', 'z']
+    # print(df_plot.shape)
+    # print(df_plot.index.is_unique) 
+    # print(df.describe())
+    # print(df.isnull().sum())
+    df_plot['title'] = df_plot.index.astype(str)
+
+    df_plot['cluster'] = 'todos'
+    # scaler = StandardScaler()
+    # df_plot[['x', 'y', 'z']] = scaler.fit_transform(df_plot[['x', 'y', 'z']])
+    # df_plot[['x', 'y', 'z']] *= 10000
+    fig = px.scatter_3d(
+        df_plot, x='x', y='y', z='z',
+        color='cluster',
+        hover_name='title',
+        title=title,
+        opacity=0.7, 
+        # color_discrete_sequence=px.colors.qualitative.Safe
+        color_discrete_sequence=px.colors.qualitative.Plotly
+        # color_discrete_sequence=px.colors.qualitative.Vivid
+
+    )
+
+    fig.update_layout(margin=dict(l=0, r=0, b=0, t=40))
+
+    # fig.add_annotation(text=f"Total puntos: {len(df_plot)}", showarrow=False, xref='paper', yref='paper', x=0, y=1.1)
+    st.plotly_chart(fig, use_container_width=True)
+
 def main():
     titulo_gud("Bienvenido a", "aRKDe")
     
     # Menú lateral
     st.sidebar.title("Menu")
     seleccion = st.sidebar.selectbox(
-        "",
+        "-----",
         ["Búsqueda de imágenes", "Comparativa"]
     )
     if seleccion == "Búsqueda de imágenes":
         subirImagen(300)
         if st.button("Obtener vecinos"):
             plotear_top_k(path=st.session_state.PATH,k_=20)
+    elif seleccion == "Comparativa":
+        data_path = st.text_input("Coloque la ruta del dataset (.txt)", value="gowalla_loc.txt")
+        output_path  = st.text_input("Coloque la ruta de resultados (.txt)", value="KnnResults.txt")
+
+        df_dataset = open_dataset(data_path) 
+        df_knn_results = open_outputPath(output_path) 
+        df_fila = take_fil( df_dataset, df_knn_results) 
+        # Plotear
+        plot_3d(df_fila, "Resultados")
+        
 
 
 
