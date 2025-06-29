@@ -54,6 +54,11 @@ def obtener_vecinos(imagen_path, dataset_original, k=4, shape=(64, 64)):
     indices_top_k = np.argsort(similitudes)[-k:][::-1]
     return indices_top_k
 
+def obtener_vecinos_images(output_path):
+    df = pd.read_csv(output_path, sep="\t", header=None, names=["fila", "valor"])
+    df_ordenado = df.sort_values(by="valor", ascending=True)
+    return df_ordenado["fila"].to_numpy()
+
 def recover_nearest(k_nearest, dataset_original):
     return dataset_original[k_nearest]
 
@@ -85,17 +90,50 @@ def subirImagen(tam):
         with col2:
             st.image(img_gris, caption="imagen en gris y redimensionada", width=tam)
 
+def eliminar_ultima_fila(path_txt):
+    with open(path_txt, "r") as f:
+        lineas = f.readlines()
+    if not lineas:
+        return 
+    lineas = lineas[:-1]
+    with open(path_txt, "w") as f:
+        f.writelines(lineas)
 
 
 def plotear_top_k(path ,k_=9):
-    if "DATASET_CARGADO" not in st.session_state:
-        st.session_state.DATASET_CARGADO = fetch_lfw_people(min_faces_per_person=0, resize=1)
+    # if "DATASET_CARGADO" not in st.session_state:
+    #     st.session_state.DATASET_CARGADO = fetch_lfw_people(min_faces_per_person=0, resize=1)
 
     data = st.session_state.DATASET_CARGADO
     images = data.images 
     labels = data.target_names[data.target]
 
-    k_nearest = obtener_vecinos(path, images, k=k_, shape=(125, 94))          
+    ############ Caso especifico del dataset imagenes ############
+    dataset_path = "dataset_lfw_people.txt"
+    distance_metric = "2"
+    num_data_points = 13234
+    output_path = "lfw_people_results.txt"
+    k_neighbors = 10
+    num_search = 1
+    # Insertar al ultimo dataset_path la imagen que ta en el path aplciandole PCA
+
+    # ----- Preparación de la imágen para insertarlo -----
+    imagen_aplanada = get_imagen_gris(path, shape=(125, 94))
+    pca = PCA(n_components=3)
+    pca = st.session_state.PCA_3D
+    imagen_3d = pca.transform([imagen_aplanada])[0]
+
+    print(imagen_3d)
+    with open(dataset_path, "a") as f:
+        fila_txt = " ".join(map(str, imagen_3d.tolist()))
+        f.write(fila_txt + "\n")
+
+    instanciar_Arkade_model(dataset_path, distance_metric, num_data_points, output_path, k_neighbors, num_search, query_points=1)
+    # k_nearest = obtener_vecinos(path, images, k=k_, shape=(125, 94))          
+    k_nearest = obtener_vecinos_images(output_path)
+    # Eliminar la ultima fila: 
+    eliminar_ultima_fila(dataset_path)
+    
     imagenes = recover_nearest(k_nearest, images)
     columns_ = 4
     for i in range(0, len(imagenes), columns_):
@@ -106,9 +144,9 @@ def plotear_top_k(path ,k_=9):
                     st.image(imagenes[i + j], width=150, caption=f"Vecino #{i + j + 1}")
 
 if "DATASET_CARGADO" not in st.session_state:
-    with st.spinner("Cargando dataset de rostros..."):
+    with st.spinner("Cargando dataset de rostros y PCA..."):
         st.session_state.DATASET_CARGADO = fetch_lfw_people(min_faces_per_person=0, resize=1)
-
+        st.session_state.PCA_3D = PCA(n_components=3).fit(st.session_state.DATASET_CARGADO.data)
 
 
 # functions_f.ArkadeModel model(dataPath, distance, radio, k, num_data_points, num_search, outputPath);
@@ -210,11 +248,14 @@ def openTiempos(output_path):
         return []
     
 
-def graficar_tiempos(tiempos, title, log_scale=False):
-    tiempos = tiempos[:2]
+def graficar_tiempos(tiempos_, title, log_scale=False):
+    tiempos = tiempos_.copy()[:2]
+    tiempos.append(tiempos[0]+tiempos[1])
+
     labels = [
         "Construcción BVH",
-        "Filter & Refine"
+        "Filter & Refine", 
+        "Tiempo total"
     ]
 
     fig = go.Figure(data=[
