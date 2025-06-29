@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 import tempfile
 from sklearn.preprocessing import StandardScaler
 import plotly.express as px
-
+import sys
+import plotly.graph_objects as go
 # ---------ESTILOS----------
 def titulo_gud(y, x):
     st.markdown(f"""
@@ -125,7 +126,7 @@ def take_fil(df_data, df_res):
     selected = df_data.iloc[df_res["fila"].values]
     return selected
 
-def plot_3d(df, title="Distribución 3D"):
+def plot_3d(df, query_point, title="Distribución 3D"):
     df_plot = df.copy()
     df_plot.columns = ['x', 'y', 'z']
     # print(df_plot.shape)
@@ -134,25 +135,100 @@ def plot_3d(df, title="Distribución 3D"):
     # print(df.isnull().sum())
     df_plot['title'] = df_plot.index.astype(str)
 
-    df_plot['cluster'] = 'todos'
+    df_plot['legend'] = 'datapoints'
+    if query_point > 0:
+        df_plot.iloc[-query_point:, df_plot.columns.get_loc('legend')] = 'query points'
+
     # scaler = StandardScaler()
     # df_plot[['x', 'y', 'z']] = scaler.fit_transform(df_plot[['x', 'y', 'z']])
     # df_plot[['x', 'y', 'z']] *= 10000
     fig = px.scatter_3d(
         df_plot, x='x', y='y', z='z',
-        color='cluster',
+        color='legend',
         hover_name='title',
         title=title,
         opacity=0.7, 
         # color_discrete_sequence=px.colors.qualitative.Safe
-        color_discrete_sequence=px.colors.qualitative.Plotly
+        # color_discrete_sequence=px.colors.qualitative.Plotly
         # color_discrete_sequence=px.colors.qualitative.Vivid
+        color_discrete_map={
+            'datapoints': 'blue',
+            'query points': 'red'
+        }
 
     )
 
     fig.update_layout(margin=dict(l=0, r=0, b=0, t=40))
 
     # fig.add_annotation(text=f"Total puntos: {len(df_plot)}", showarrow=False, xref='paper', yref='paper', x=0, y=1.1)
+    st.plotly_chart(fig, use_container_width=True)
+
+def start_params():
+    col1_seleccion, col2_seleccion = st.columns(2)
+
+    with col1_seleccion:
+        data_path = st.text_input("Coloque la ruta del dataset (.txt)", value="gowalla_loc.txt")
+        distance_metric = st.text_input("Distancia", value="2")
+        total_data_points = st.number_input("Total de puntos", min_value=1, max_value=4000, value=1000, step=1)
+    with col2_seleccion:
+        output_path = st.text_input("Coloque la ruta de resultados (.txt)", value="KnnResults.txt")
+        search_radius = st.number_input("Ingresa el radio", min_value=0.0, max_value=50.0, value=10.0, step=0.1)
+        num_neighbors = st.number_input("k", min_value=1, max_value=4000, value=5, step=1)
+        query_points = st.number_input("Puntos de búsqueda", min_value=1, max_value=4000, value=1, step=1)
+    return data_path, distance_metric, total_data_points, output_path, search_radius, num_neighbors, query_points
+
+def instanciar_Arkade_model(data_path, distance_metric, total_data_points,
+                      output_path, search_radius, num_neighbors, query_points):
+    try:
+        from py_arkade import ArkadeModel
+        print("Creating ArkadeModel instance...")
+        model = ArkadeModel(
+            dataPath=data_path,
+            distance=distance_metric,
+            radio=search_radius,
+            k=num_neighbors,
+            num_data_points=total_data_points,
+            num_search=query_points,
+            outputFile=output_path
+        )
+        print("ArkadeModel instance created successfully.")
+        return model
+    except Exception as e:
+        st.error(f"Failed to instantiate ArkadeModel: {e}")
+        return None
+
+def openTiempos(output_path):
+    tiempos_path = output_path.replace('.txt', '_tiempos.txt')
+    try:
+        with open(tiempos_path, 'r') as f:
+            line = f.readline().strip()
+        valores = [float(v.strip()) for v in line.split()]
+        return valores
+
+    except Exception as e:
+        print(f"Error reading tiempos file: {e}")
+        return []
+    
+
+def graficar_tiempos(tiempos, title, log_scale=False):
+    tiempos = tiempos[:2]
+    labels = [
+        "Construcción BVH",
+        "Filter & Refine"
+    ]
+
+    fig = go.Figure(data=[
+        go.Bar(x=labels, y=tiempos, marker_color='indianred')
+    ])
+
+    fig.update_layout(
+        title=title,
+        xaxis_title="Etapas",
+        yaxis_title="Tiempo (escala logarítmica)" if log_scale else "Tiempo",
+        template="plotly_white", 
+        yaxis_type="log" if log_scale else "linear"
+    )
+
     st.plotly_chart(fig, use_container_width=True)
 
 def main():
@@ -168,16 +244,32 @@ def main():
         subirImagen(300)
         if st.button("Obtener vecinos"):
             plotear_top_k(path=st.session_state.PATH,k_=20)
-    elif seleccion == "Comparativa":
-        data_path = st.text_input("Coloque la ruta del dataset (.txt)", value="gowalla_loc.txt")
-        output_path  = st.text_input("Coloque la ruta de resultados (.txt)", value="KnnResults.txt")
 
+    elif seleccion == "Comparativa":
+        data_path, distance_metric, total_data_points, output_path, search_radius, num_neighbors, query_points = start_params()
+        
+        arkade_model = instanciar_Arkade_model(data_path, distance_metric, total_data_points,
+                      output_path, search_radius, num_neighbors, query_points)
+
+        # if arkade_model is not None:
+        print("Leyendo archivos para mostrar resultados.")
         df_dataset = open_dataset(data_path) 
         df_knn_results = open_outputPath(output_path) 
         df_fila = take_fil( df_dataset, df_knn_results) 
-        # Plotear
-        plot_3d(df_fila, "Resultados")
+        plot_3d(df_fila,  query_points, "Resultados")
         
+        # tiempos = output_path -".txt" + "_tiempos.txt"
+        # una sola linea de: 
+        # contruccion BVH, Filter & Refine, Numero de intersecciones, Total de valores a escribir:
+
+        tiempos = openTiempos(output_path)
+        if tiempos:
+            print(tiempos)
+            graficar_tiempos(tiempos,"Tiempos de arkade" , False)
+        else:
+            print("Tiempos esta vacío")
+
+
 
 
 
