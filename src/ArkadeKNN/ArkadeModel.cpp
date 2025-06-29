@@ -32,6 +32,8 @@ ArkadeModel::ArkadeModel(std::string dataPath, string _distance, float _radio, i
     gpu_process = new CreateBVH(this);
     results = gpu_process->get_results();
 
+    // to write the results to the output file
+    cout << *this;
 }
 
 void ArkadeModel::InitializeData(){

@@ -12,8 +12,7 @@ embed_ptx(
         SOURCES DeviceCode.cu
 )
 
-add_executable(ArkadeKNN
-        MainCode.cpp
+add_library(ArkadeKNN_lib
         ArkadeModel.cpp
         CreateBVH.cpp
         VarGlobal.cpp
@@ -21,11 +20,29 @@ add_executable(ArkadeKNN
         methods.h
 )
 
+set_target_properties(ArkadeKNN_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+add_executable(ArkadeKNN
+        MainCode.cpp
+)
+
 message(STATUS "ArkadeKNN-ptx target: ${ArkadeKNN-ptx}")
 
 
 target_link_libraries(ArkadeKNN
         PRIVATE
+        ArkadeKNN_lib
         ArkadeKNN-ptx
         owl::owl
 )
+
+target_link_libraries(ArkadeKNN_lib
+        PRIVATE
+        ArkadeKNN-ptx
+        owl::owl
+)
+
+option(ARKADE_BUILD_PYARKADE "Build PyArkade Python Wrappers?" ON)
+if (ARKADE_BUILD_PYARKADE)
+  add_subdirectory(pyArkadeKNN)
+endif()
