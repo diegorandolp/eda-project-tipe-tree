@@ -1,2 +1,4 @@
 build/
 datasets/
+.idea/
+cmake-build-debug/

@@ -1,4 +1,3 @@
-
 # Macros a utilizar
 add_compile_definitions(KN=10)
 add_compile_definitions(FLOAT_MAX=3.402823466e+38)

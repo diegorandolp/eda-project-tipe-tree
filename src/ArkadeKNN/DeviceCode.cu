@@ -2,7 +2,7 @@
 // Durga Keerthi Mandarapu, Vani Nagarajan, Artem Pelenitsyn, and Milind Kulkarni. 2024.
 // Arkade: k-Nearest Neighbor Search With Non-Euclidean Distances using GPU Ray Tracing.
 
-#include "deviceCode.h"
+#include "DeviceCode.h"
 #include "VarGlobal.h"
 #include <optix_device.h>
 

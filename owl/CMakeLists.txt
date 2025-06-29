@@ -142,8 +142,7 @@ endif()
 # ------------------------------------------------------------------
 # PyOWL python bindings
 # ------------------------------------------------------------------
-option(OWL_BUILD_PYOWL "Build PyOWL Python Wrappers?" OFF)
+option(OWL_BUILD_PYOWL "Build PyOWL Python Wrappers?" ON)
 if (OWL_BUILD_PYOWL)
   add_subdirectory(pyOWL)
 endif()
-    

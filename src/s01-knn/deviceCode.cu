@@ -72,8 +72,8 @@ OPTIX_INTERSECT_PROGRAM(Spheres)()
 	float distance = 0.0;
 
     // Acá definimos la norma a usar.
-#define NORM 0
-#define KN 20
+//#define NORM 0
+//#define KN 20
 
 
     // Función de distancia que se va a usar en la NORM L^p
