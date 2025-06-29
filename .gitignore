@@ -1,0 +1,7 @@
+env/
+
+build/
+
+.vscode/
+
+pybind11/
