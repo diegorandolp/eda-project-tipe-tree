@@ -45,4 +45,6 @@ FastRNN::FastRNN(std::string dataPath, string _distance, float _radio, int _k, i
     baseModel->create_tree(gpu_process);
     baseModel->obtain_results();
 
+    // to print the results
+    cout << *this << endl;
 }

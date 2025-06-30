@@ -22,8 +22,8 @@
 
 add_subdirectory(ArkadeKNN)
 
-file(GLOB samples RELATIVE ${CMAKE_CURRENT_LIST_DIR} "s??-*")
+#file(GLOB samples RELATIVE ${CMAKE_CURRENT_LIST_DIR} "s??-*")
 
-foreach(sample ${samples})
-    add_subdirectory(${sample})
-endforeach()
+#foreach(sample ${samples})
+#    add_subdirectory(${sample})
+#endforeach()

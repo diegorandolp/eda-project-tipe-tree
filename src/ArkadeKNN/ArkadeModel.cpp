@@ -17,5 +17,7 @@ ArkadeModel::ArkadeModel(std::string dataPath, string _distance, float _radio, i
     auto* gpu_process = new CreateBVH(baseModel, isTrueKnnModel, distance);
     baseModel->create_tree(gpu_process);
     baseModel->obtain_results();
+    // to print the results
+    cout << *this << endl;
 
 }

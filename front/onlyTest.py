@@ -7,10 +7,10 @@ build_path = os.path.join(root_dir, "build")
 sys.path.append(build_path)
 
 try:
-    from py_arkade import ArkadeModel
+    from py_arkade import ArkadeModel, FastRNN
 
     data_path = "../datasets/sample_gowalla.txt"
-    distance_metric = "2"
+    distance_metric = "3"
     search_radius = 10.0
     num_neighbors = 5
     total_data_points = 1000
@@ -20,7 +20,9 @@ try:
     output_file = "./knn_results9.txt"
 
     print("Creating ArkadeModel instance...")
-    model = ArkadeModel(
+
+    model = FastRNN(
+    #model = ArkadeModel(
         dataPath=data_path,
         distance=distance_metric,
         radio=search_radius,

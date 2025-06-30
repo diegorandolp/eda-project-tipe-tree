@@ -15,6 +15,7 @@ embed_ptx(
 add_library(ArkadeKNN_lib
         ArkadeModel.cpp
         BaseModel.cpp
+        FastRNN.cpp
         CreateBVH.cpp
         VarGlobal.cpp
         TransMonotoma.cpp
