@@ -14,9 +14,9 @@ try:
 
     data_path = "../datasets/sample_gowalla.txt"
     distance_metric = "5"
-    num_neighbors = 5
+    num_neighbors = 12
     total_data_points = 1000
-    query_points = 10
+    query_points = 9
     with_true_knn = True
     # i had to create it manually
     output_file = "./knn_results9.txt"
@@ -47,7 +47,9 @@ try:
         num_data_points=total_data_points,
         num_search=query_points,
         TrueKnn=with_true_knn,
-        outputFile=output_file)
+        outputFile=output_file,
+        fromUser=True,
+        myInput=[0.5, 0.5, 0.5])
     print("ArkadeModel instance created successfully.")
 
 

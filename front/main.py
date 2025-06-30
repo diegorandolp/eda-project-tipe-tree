@@ -177,6 +177,8 @@ def main():
         query_points = 10
         # i had to create it manually
         output_file = "./knn_results9.txt"
+        from_user = True
+        my_input = [0.5, 0.5, 0.5]
 
         print("Creating ArkadeModel instance...")
         model = ArkadeModel(
@@ -186,7 +188,10 @@ def main():
             k=num_neighbors,
             num_data_points=total_data_points,
             num_search=query_points,
-            outputFile=output_file)
+            TrueKnn=True,
+            outputFile=output_file,
+            fromUser=from_user,
+            myInput=my_input)
         print("ArkadeModel instance created successfully.")
 
         ###############################################333
@@ -201,7 +206,7 @@ def main():
         if seleccion == "Búsqueda de imágenes":
             subirImagen(300)
             if st.button("Obtener vecinos"):
-                # plotear_top_k(path=st.session_state.PATH,k_=20)
+                plotear_top_k(path=st.session_state.PATH,k_=20)
                 print("Obteniendo vecinos...")
         elif seleccion == "Comparativa":
             data_path = st.text_input("Coloque la ruta del dataset (.txt)", value=data_path)
