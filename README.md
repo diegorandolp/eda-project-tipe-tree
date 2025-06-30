@@ -1,47 +1,64 @@
-##  Source code of "Arkade: k-Nearest Neighbor Search With Non-Euclidean Distances using GPU Ray Tracing." 
+# Arkade: k-Nearest Neighbor Search With Non-Euclidean Distances using GPU Ray Tracing - Reproduction Work
+This project is a reproduction of the source code described in the paper:
 https://doi.org/10.1145/3650200.3656601
 
-High-performance implementations of k-Nearest Neighbor Search (kNN) in low dimensions use tree-based data structures. Tree algorithms are hard to parallelize on GPUs due to their irregularity. However, newer Nvidia GPUs offer hardware support for tree operations through ray-tracing cores. Recent works have proposed using RT cores to implement kNN search, but they all have a hardware-imposed constraint on the distance metric used in the search—the Euclidean distance. We propose and implement two reductions to support kNN for a broad range of distances other than the Euclidean distance: Arkade Filter-Refine and Arkade Monotone Transformation, each of which allows non-Euclidean distance-based nearest neighbor queries to be performed in terms of the Euclidean distance. With our reductions, we observe that kNN search time speedups range between 1.6x-200x and 1.3x-33.1x over various state-of-the-art GPU shader core and RT core baselines, respectively. In evaluation, we provide several insights on RT architectures’ ability to efficiently build and traverse the tree by analyzing the kNN search time trends.
+## Team members
 
-## To run Arkade
+- Daniel Casquino
+- Josep Castro
+- Marcelino Maita
+- Rodrigo Meza
+- Diego Quispe
 
-The project is built with Optix 8 and cuda 12.2\
-refer to owl (https://github.com/owl-project/owl) for all the dependencies\
+## Prerequisites
+Before you begin, ensure you have the following installed:
 
-```
+OptiX: A high-performance ray tracing engine from NVIDIA.
+
+Intel TBB (Threading Building Blocks): A C++ template library for parallel programming.
+
+## Installation Steps
+Follow these steps to install the necessary components and build the project:
+
+1. Install OptiX and Intel TBB:
+Ensure that OptiX and Intel TBB are installed on your system. The specific installation method may vary depending on your operating system and NVIDIA driver version. Refer to their official documentation for detailed instructions.
+
+2. Build the Project:
+Navigate to your project's root directory and execute the following commands:
+
+```bash
 mkdir build
 cd build
-cmake ../ -DKN=k -DNORM=0
+cmake ../ -DKN=3 -DNORM=2
 make s01-knn
-./s01-knn filename npoints nsearchpoints radius_estimate
-```
-
-s01-knn performs knn search within a given radius. Sometimes, a query point may not be able to find all neighbors within this given radius, so we use Trueknn (https://github.com/vani-nag/OWLRayTracing) so that users do not have to worry about tuning the radius parameter for Arkade. s02-withTrueknn contains the combined code. To get the radius estimate, run initial_estimate.py first. num_samples can be as small as 1000.
-
-```
-cd src/s02-withTrueknn/
-python initial_estimate.py <filename> <num_samples>
-
-cd ../../build/
-./sample02-withTrueknn ../datasets/sample_gowalla.txt 1000 10 <radius estimate from running python script>
 ```
 
 
-### Dataset format
+- ```mkdir build```: Creates a new directory named build.
 
-```./datasets/ ``` folder contains a sample dataset (sample_gowalla.txt) to run Arkade. The description of datasets and the links where we sourced them from are described in the evaluation section of the paper. Additionally, the datasets folder contains scripts to process those datasets in the format Arkade takes as input. The input format is space-separated x, y, and z coordinates of each point, and every point is in a new line. 
+- ```cd build```: Changes the current directory to build.
 
+- ```cmake ../```: Configures the project using CMake.
+
+- ```make```: Compiles the Arkade project and creates the bindings.
+
+## Running the Application
+After successfully building the project, you can run the Streamlit application:
+
+1. Set ```LD_PRELOAD``` (if necessary):
+If you encounter issues related to libstdc++.so.6, you might need to preload the library:
+```bash
+export LD_PRELOAD="/usr/lib/x86_64-linux-gnu/libstdc++.so.6"
 ```
-<x_1 y_1 z_1>
-<x_2 y_2 z_2>
-...
-<x_n y_n z_n>
+
+2. Start the Streamlit Application:
+Navigate to the front directory and start the Streamlit application:
+
+```bash
+cd front
+streamlit start main.py
 ```
-Example:
-```text
-0.1 0.1 0.1
-0.2 0.1 0.2
-```
+This command will launch the Streamlit application in your web browser.
 
 
 ## Publication
