@@ -9,24 +9,30 @@
 #include <owl/DeviceMemory.h>
 #include "VarGlobal.h"
 
-class ArkadeModel;
+class BaseModel;
 
 class CreateBVH {
 private:
-    ArkadeModel* model;
+    BaseModel* model;
 
     // Parámetros OWL (para la creación del BVH)
     OWLContext context;
     OWLModule  module;
     const EDA::Neigh* results;
+    string distance{};
+    int round;
 
     // Medido en segundos.
     float TimeCreateBVH{};
     float TimeRayGen{};
 
+    bool isTrueKnnModel;
+
+    vector<int> n_neighbors;
+
 
 public:
-    explicit CreateBVH(ArkadeModel* _model);
+    explicit CreateBVH(BaseModel* _model, bool _isTrueKnnModel, string _distance = "2");
 
     const EDA::Neigh* GetResultsAndCreateBVH();
 
@@ -36,6 +42,8 @@ public:
 
     float GetTimeCreateBVH();
     float GetTimeRayGen();
+    int GetNumRounds();
+    bool isTrueKNN();
 
 };
 

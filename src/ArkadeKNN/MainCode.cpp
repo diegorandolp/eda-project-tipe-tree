@@ -1,4 +1,6 @@
+#include "VarGlobal.h"
 #include "ArkadeModel.h"
+#include "FastRNN.h"
 
 int main(int ac, char **argv){
 
@@ -8,10 +10,12 @@ int main(int ac, char **argv){
     int num_data_points = stoi(argv[2]);
     int num_search = stoi(argv[3]);
     string outputPath = argv[5];
+    bool withTrueKnn = false;
 
-    string distance = "hamming";
+    string distance = "0";
 
-    ArkadeModel model(dataPath, distance, radio, k, num_data_points, num_search, outputPath);
+    ArkadeModel model(dataPath, distance, radio, k, num_data_points, num_search, withTrueKnn, outputPath);
+    //FastRNN model(dataPath, distance, radio, k, num_data_points, num_search, withTrueKnn, outputPath);
 
     cout << model;
 

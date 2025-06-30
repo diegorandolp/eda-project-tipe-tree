@@ -1,6 +1,9 @@
 import sys
+import os
 
-build_path = "/build/src/ArkadeKNN/pyArkadeKNN"
+# Get the absolute path to the project's root directory
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+build_path = os.path.join(root_dir, "build")
 sys.path.append(build_path)
 
 import streamlit as st
@@ -218,4 +221,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

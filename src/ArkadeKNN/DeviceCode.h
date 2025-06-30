@@ -6,10 +6,12 @@
 #include <owl/common/math/random.h>
 #include <limits>
 #include <iostream>
+#include <vector>
+
+constexpr int tam_k = KN;
 
 using namespace owl;
 using namespace std;
-
 
 // En esta sección se crearán las estructuras que se usaran en el proyecto.
 // Serán las estructuras base para construir objetos personalizados de OWL.
@@ -35,6 +37,9 @@ namespace EDA{
             pt[idx] = val;
 
         }
+
+
+
     };
 
     // Conjunto de esferas a utilizar.
@@ -60,13 +65,17 @@ namespace EDA{
     // Se encargará de guardar variables globales en la GPU.
     struct GlobalVars{
         Neigh* frameBuffer;
+        int* num_neighbors;
         int k;
         int NORM;
+        int round;
+        bool isTrueKnn;
     };
 
     // Clase que guardará los K vecinos más cercanos.
     struct NeighKNN{
-        Neigh res[KN];
+        EDA::Neigh res[tam_k];
+        int tam = tam_k;
     };
 
 }

@@ -17,7 +17,7 @@ struct methods{
     }
 
     static inline vec3f normalize(const vec3f& v){
-        float len = magnitude(v);
+        float len = methods::magnitude(v);
         if (len == 0.0f) return v;
         return vec3f(v.x / len, v.y / len, v.z / len);
     }

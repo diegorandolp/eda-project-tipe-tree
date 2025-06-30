@@ -5,6 +5,7 @@
 #include "DeviceCode.h"
 #include "VarGlobal.h"
 #include <optix_device.h>
+#include <cuda_runtime.h>
 
 using namespace owl;
 
@@ -12,6 +13,18 @@ using namespace owl;
 
 // Variable global constante accedida desde el main
 __constant__ EDA::GlobalVars optixLaunchParams;
+
+__device__ bool FueVecinoAntes(int xID, int primID){
+
+    int k = optixLaunchParams.k;
+    for(int i = 0; i < k; ++i){
+        int SearchVecino = optixLaunchParams.frameBuffer[xID * k + i].idx;
+
+        if(SearchVecino == primID) return true;
+    }
+
+    return false;
+}
 
 // Template para soportar múltiples tipos de geometrías de esfera
 template<typename SphereGeomType>
@@ -22,8 +35,7 @@ template<typename SphereGeomType>
 // ============================================================================
 inline __device__ void boundsProg(const void* geomData,
                                   box3f& primBounds,
-                                  const int primID)
-{
+                                  const int primID){
     // Cast del puntero genérico a nuestra estructura de geometría
     const SphereGeomType& self = *(const SphereGeomType*)geomData;
 
@@ -77,10 +89,25 @@ OPTIX_INTERSECT_PROGRAM(Spheres)(){
     // Extraer la norma a utilizar de las variables globales.
     int NORM = optixLaunchParams.NORM;
 
+    bool isTrueKnn = optixLaunchParams.isTrueKnn;
+
+    int k = optixLaunchParams.k;
+
+    // Accedemos al registro de vecinos actual
+    auto& param = owl::getPRD<EDA::NeighKNN>();
+    const int xID = optixGetLaunchIndex().x;
+
+    // En caso de estar usando el modelo TrueKnn, se realiza una verificación adicional:
+    // - Si estamos en la ronda 0, simplemente se asignan los vecinos iniciales a cada query (sin filtrado).
+    // - Si estamos en una ronda > 0, se verifica si este data point ya fue vecino en la ronda anterior.
+    //   Si ya fue mapeado previamente como vecino, se descarta, ya que no es necesario refinarlo nuevamente.
+    if(isTrueKnn && optixLaunchParams.round > 0 && FueVecinoAntes(xID, primID))
+        return;
+
     // -----------------------------
     // Cálculo de distancia (L^p Norm)
     // -----------------------------
-    float distance = 0.0;
+    float distance = 0.0f;
 
     if (NORM == 0) { // Norm infinito (máxima componente absoluta)
         float dx = std::abs(sphere.pt.x - rayOrigin.x);
@@ -99,24 +126,26 @@ OPTIX_INTERSECT_PROGRAM(Spheres)(){
     // Filtro de candidatos por radio (Filter)
     // Cálculo equivalente a sqrt(distance, NORM) < self.rad
     // -----------------------------
-    if(distance < powf(self.rad, NORM)){
 
-        // Accedemos al registro de vecinos actual
-        auto& param = owl::getPRD<EDA::NeighKNN>();
+    if (!isTrueKnn) {
+        if ((NORM > 0 && distance > powf(self.rad, NORM)) ||
+            (NORM == 0 && distance > self.rad))
+            return;
+    }
 
-        // Buscamos el vecino más lejano en la lista actual, el peor registrado.
-        int max_idx = 0;
-        for (int i = 1; i < KN; ++i) {
-            if (param.res[i].dist > param.res[max_idx].dist) {
-                max_idx = i;
-            }
-        }
+    // Buscamos el vecino más lejano en la lista actual, el peor registrado.
 
-        // Si la nueva distancia es mejor que el peor vecino, lo reemplazamos (Refine)
-        if (distance < param.res[max_idx].dist) {
-            param.res[max_idx].dist = distance;
-            param.res[max_idx].idx  = primID;
-        }
+    int max_idx = 0;
+    for (int i = 1; i < k; ++i) {
+        if (param.res[i].dist > param.res[max_idx].dist)
+            max_idx = i;
+
+    }
+
+    // Si la nueva distancia es mejor que el peor vecino, lo reemplazamos (Refine)
+    if (distance < param.res[max_idx].dist) {
+        param.res[max_idx].dist = distance;
+        param.res[max_idx].idx  = primID;
     }
 
 }
@@ -137,14 +166,23 @@ OPTIX_RAYGEN_PROGRAM(rayGen)(){
     // Índice X de la RayGen Query lanzado (cada hilo procesa un punto de consulta)
     const int xID = optixGetLaunchIndex().x;
 
+    // Para el TrueKnn, si ya se mapeo en esa query K vecinos, no tiene sentido continuar con el proceso.
+    // solo es para los que tengan < KN vecinos.
+
+
+    int k = optixLaunchParams.k;
+    if(optixLaunchParams.num_neighbors[xID] >= k) return;
+
     // -----------------------------
     // 2. Inicializar los vecinos (KNN)
     // -----------------------------
-    EDA::NeighKNN param{};
-    for (auto & re : param.res) {
-        re.idx = -1;
-        re.dist = FLOAT_MAX;
+    EDA::NeighKNN param;
+
+    for (int i = 0; i < k; ++i) {
+        param.res[i].idx = -1;
+        param.res[i].dist = FLOAT_MAX;
     }
+
 
     // -----------------------------
     // 3. Construcción del rayo
@@ -160,6 +198,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)(){
     // -----------------------------
     // Esto inicia el recorrido por el BVH y llama a OPTIX_INTERSECT_PROGRAM
     // param es modificado dentro del programa de intersección con los KNN encontrados
+
     owl::traceRay(self.world, ray, param);
 
     // -----------------------------
@@ -167,12 +206,32 @@ OPTIX_RAYGEN_PROGRAM(rayGen)(){
     // En el Buffer de los resultados tiene num_search * KN de espacio reservado, para guardar por indices
     // los vecinos más cercanos de CADA query point.
     // -----------------------------
-    for (int i = 0; i < KN; ++i) {
 
-        // Cada k vecinos conseguidos le pertenece al query point correspondiente
-        // El rango de índices en el que se ubica sus vecinos es: [ID*KN : ID*(KN+1)]
-        int outputIndex = xID * KN + i;
-        optixLaunchParams.frameBuffer[outputIndex].idx  = param.res[i].idx;
-        optixLaunchParams.frameBuffer[outputIndex].dist = param.res[i].dist;
+    // Para el TrueKnn
+
+    int num_neighbors = 0;
+    for (int i = 0; i < k; i+=1) {
+
+
+        // Para el TrueKnn, para el modelo Arkade nunca la incumplirá (para verificar posibles falsos positivos)
+        if(param.res[i].idx != -1) {
+            // Cada k vecinos conseguidos le pertenece al query point correspondiente
+            // El rango de índices en el que se ubica sus vecinos es: [ID*KN : ID*(KN+1)]
+            int outputIndex = xID * k + i;
+            optixLaunchParams.frameBuffer[outputIndex].idx = param.res[i].idx;
+            optixLaunchParams.frameBuffer[outputIndex].dist = param.res[i].dist;
+
+            num_neighbors += 1;
+        }
+
     }
+
+    //printf("num_vecinos: %d\n", num_neighbors);
+    //printf("vecinos: %d\n", k);
+
+    // Seteamos el # de vecinos detectados para la query xID.
+
+    optixLaunchParams.num_neighbors[xID] = num_neighbors;
+    //printf("vec: %d\n", optixLaunchParams.num_neighbors[xID]);
+
 }

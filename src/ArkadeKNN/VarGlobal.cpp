@@ -3,6 +3,7 @@
 vector<EDA::Point> DataPoints;
 vector<EDA::Point> QueryPoints;
 vector<EDA::Neigh> Vecinos;
+TransMonotoma* trans;
 
 bool esEntero(const string& str) {
 
@@ -27,7 +28,6 @@ bool esEntero(const string& str) {
 
     return true;
 }
-
 int NormToUse(string& distance){
 
     for(char& c : distance)

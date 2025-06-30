@@ -10,10 +10,12 @@
 #include <cctype>
 #include <string>
 #include <vector>
+#include "TransMonotoma.h"
 
 extern vector<EDA::Point> DataPoints;
 extern vector<EDA::Point> QueryPoints;
 extern vector<EDA::Neigh> Vecinos;
+extern TransMonotoma* trans;
 extern int NORM;
 
 extern "C" char DeviceCode_ptx[];
