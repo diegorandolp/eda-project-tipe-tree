@@ -1,0 +1,9 @@
+Radio:10
+Numero de puntos en total a utilizar:3023
+Numero de query points a utilizar:1
+Numero de vecinos por query point:5
+Numero de rondas:0
+Tiempo que tardo en procesar los datos:0.002059
+Construccion del BVH:0.00076
+Filter & Refine:0.018968
+Numero de intersecciones:1064

@@ -27,7 +27,7 @@ BaseModel::BaseModel(string dataPath, float _radio, int _k, int _num_data_points
 
 void BaseModel::InitializeData(){
 
-
+    QueryPoints.clear();
     auto start_b = std::chrono::steady_clock::now();
 
     // Open DataSet
