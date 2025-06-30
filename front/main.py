@@ -5,6 +5,7 @@ import os
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 build_path = os.path.join(root_dir, "build")
 sys.path.append(build_path)
+from py_arkade import ArkadeModel
 
 import streamlit as st
 from PIL import Image
@@ -48,7 +49,7 @@ def get_imagen_gris(ruta, shape=(64, 64)):
     return np.array(imagen).reshape(-1)
 
 # Pruebas aún
-def obtener_vecinos(imagen_path, dataset_original, k=4, shape=(64, 64)):
+def obtener_vecinos(imagen_path,dataset_original, k=4, shape=(64, 64)):
     if dataset_original.ndim == 3:
         dataset_original = dataset_original.reshape((dataset_original.shape[0], -1))
     imagen_aplanada = get_imagen_gris(imagen_path, shape=shape)
@@ -57,9 +58,49 @@ def obtener_vecinos(imagen_path, dataset_original, k=4, shape=(64, 64)):
     dataset_3d = pca.fit_transform(dataset_original)
     imagen_3d = pca.transform([imagen_aplanada])[0]
 
-    similitudes = np.dot(dataset_3d, imagen_3d)
-    indices_top_k = np.argsort(similitudes)[-k:][::-1]
-    return indices_top_k
+    data_path = "../datasets/dataset_3d.txt"
+    distance_metric = "2"
+    search_radius = 10.0
+    num_neighbors = 5
+    total_data_points = 13000
+    query_points = 1
+    # i had to create it manually
+    output_file = "./dataset_3d_results.txt"
+    from_user = True
+    my_input = imagen_3d
+
+    print("Creating ArkadeModel instance...")
+    model = ArkadeModel(
+        dataPath=data_path,
+        distance=distance_metric,
+        radio=search_radius,
+        k=num_neighbors,
+        num_data_points=total_data_points,
+        num_search=query_points,
+        TrueKnn=True,
+        outputFile=output_file,
+        fromUser=from_user,
+        myInput=my_input)
+    print("ArkadeModel instance created successfully.")
+
+    with open(output_file, 'r') as file:
+        lines = file.readlines()
+
+    indices_top_k = []
+    # sort distances
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        parts[0] = int(parts[0])
+        parts[1] = float(parts[1])
+        indices_top_k.append((parts[0], parts[1]))
+    indices_top_k.sort(key=lambda x: x[1])  # Sort by distance
+
+    return [i for i, _ in indices_top_k[:k]]
 
 def recover_nearest(k_nearest, dataset_original):
     return dataset_original[k_nearest]
@@ -165,62 +206,29 @@ def plot_3d(df, title="Distribución 3D"):
 
 def main():
 
+    titulo_gud("Bienvenido a", "aRKDe")
 
-    try:
-        from py_arkade import ArkadeModel
+    # Menú lateral
+    st.sidebar.title("Menu")
+    seleccion = st.sidebar.selectbox(
+        "-----",
+        ["Búsqueda de imágenes", "Comparativa"]
+    )
+    if seleccion == "Búsqueda de imágenes":
+        subirImagen(300)
+        if st.button("Obtener vecinos"):
+            plotear_top_k(path=st.session_state.PATH,k_=20)
+            print("Obteniendo vecinos...")
+    elif seleccion == "Comparativa":
+        data_path = st.text_input("Coloque la ruta del dataset (.txt)", value=data_path)
+        output_path  = st.text_input("Coloque la ruta de resultados (.txt)", value=output_file)
 
-        data_path = "../datasets/sample_gowalla.txt"
-        distance_metric = "2"
-        search_radius = 10.0
-        num_neighbors = 5
-        total_data_points = 1000
-        query_points = 10
-        # i had to create it manually
-        output_file = "./knn_results9.txt"
-        from_user = True
-        my_input = [0.5, 0.5, 0.5]
+        df_dataset = open_dataset(data_path)
+        df_knn_results = open_outputPath(output_path)
+        df_fila = take_fil( df_dataset, df_knn_results)
+        # Plotear
+        plot_3d(df_fila, "Resultados")
 
-        print("Creating ArkadeModel instance...")
-        model = ArkadeModel(
-            dataPath=data_path,
-            distance=distance_metric,
-            radio=search_radius,
-            k=num_neighbors,
-            num_data_points=total_data_points,
-            num_search=query_points,
-            TrueKnn=True,
-            outputFile=output_file,
-            fromUser=from_user,
-            myInput=my_input)
-        print("ArkadeModel instance created successfully.")
-
-        ###############################################333
-        titulo_gud("Bienvenido a", "aRKDe")
-
-        # Menú lateral
-        st.sidebar.title("Menu")
-        seleccion = st.sidebar.selectbox(
-            "-----",
-            ["Búsqueda de imágenes", "Comparativa"]
-        )
-        if seleccion == "Búsqueda de imágenes":
-            subirImagen(300)
-            if st.button("Obtener vecinos"):
-                plotear_top_k(path=st.session_state.PATH,k_=20)
-                print("Obteniendo vecinos...")
-        elif seleccion == "Comparativa":
-            data_path = st.text_input("Coloque la ruta del dataset (.txt)", value=data_path)
-            output_path  = st.text_input("Coloque la ruta de resultados (.txt)", value=output_file)
-
-            df_dataset = open_dataset(data_path)
-            df_knn_results = open_outputPath(output_path)
-            df_fila = take_fil( df_dataset, df_knn_results)
-            # Plotear
-            plot_3d(df_fila, "Resultados")
-
-    except ImportError as e:
-        print(f"Error importing module: {e}")
-        sys.exit(1)
 
 
 
