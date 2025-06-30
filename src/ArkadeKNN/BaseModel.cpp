@@ -9,13 +9,15 @@ bool is_open(const string& df, const string& of) {
     return file1.is_open() && file2.is_open();
 }
 BaseModel::BaseModel(string dataPath, float _radio, int _k, int _num_data_points,
-                     int _num_search, string outputPath){
+                     int _num_search, string outputPath, bool _fromUser, vector<float> _myInput){
     dataFile = std::move(dataPath);
     radio = _radio;
     k = _k;
     num_data_points = _num_data_points;
     num_search = _num_search;
     outputFile = std::move(outputPath);
+    fromUser = _fromUser;
+    myInput = _myInput;
 
     if(!is_open(dataFile, outputFile)) {
         cerr << "Error al abrir algún path mandado\n";
@@ -38,6 +40,15 @@ void BaseModel::InitializeData(){
 
     DataPoints.reserve(num_data_points);
     QueryPoints.reserve(num_search);
+
+    if(fromUser){
+        EDA::Point pt;
+        pt.pt = trans->transformar(pt.pt);
+        for(int idx = 0; idx < myInput.size(); ++idx)
+            pt.set_point(idx, myInput[idx]);
+        QueryPoints.push_back(pt);
+        this->num_search = 1;
+    }
 
     // Rescatamos la información del dataset y la convertimos en Points, distribuido en la Data y Query.
     while(getline(file, line)){
@@ -65,21 +76,30 @@ void BaseModel::InitializeData(){
         if(TotalData < num_data_points)
             DataPoints.push_back(pt);
         else
-            QueryPoints.push_back(pt);
+            if(!fromUser) QueryPoints.push_back(pt);
 
 
         TotalData+=1;
+        // if(fromUser && TotalData >= num_data_points) break;
+
 
     }
 
     file.close();
-
-    if(TotalData < num_data_points + num_search)
+    cout << "Total de data points: " << TotalData << endl;
+    cout << "Total de query points: " << num_data_points << endl;
+    cout << "Total de puntos a buscar: " << num_search << endl;
+    if(!fromUser && TotalData < num_data_points + num_search)
         throw runtime_error("No hay suficientes data para la busqueda.");
-
+    if(fromUser && TotalData < num_data_points)
+        throw runtime_error("No hay suficientes data para la busqueda2.");
     if(num_data_points < k)
         throw runtime_error("No hay suficientes data points para vecinos");
 
+    cout << "Query Points: " << endl;
+    for (const auto& query : QueryPoints) {
+        cout << "- " << query << endl;
+    }
 
     // Inicializamos los k vecinos.
     for(size_t idx = 0; idx < k*num_search; idx+=1){

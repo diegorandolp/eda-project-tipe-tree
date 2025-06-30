@@ -29,6 +29,8 @@ private:
     int num_data_points{};
     int num_search{};
     string outputFile;
+    bool fromUser{};
+    vector<float> myInput{};
 
     // Tiempo que tardó en inicializar los datos
     float TimeToInitializeData{};
@@ -41,7 +43,7 @@ private:
 
 public:
     BaseModel(string dataPath, float _radio, int _k, int _num_data_points,
-        int _num_search, string outputPath);
+        int _num_search, string outputPath, bool _fromUser, vector<float> _myInput);
 
     void InitializeData();
     float get_radius() const;

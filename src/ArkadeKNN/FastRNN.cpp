@@ -14,10 +14,9 @@ float IncrementRadius(float radio, const string& distance){
 
     return fmax(radio, radio * pow(static_cast<float>(d), exponent));
 }
-
 FastRNN::FastRNN(std::string dataPath, string _distance, float _radio, int _k, int _num_data_points, int _num_search,
                  bool TrueKnn,
-                 std::string outputPath) {
+                 std::string outputPath, bool fromUser, vector<float> myInput) {
 
     // TrueKNN se basa en la norma L2
     distance = std::move(_distance);
@@ -38,8 +37,11 @@ FastRNN::FastRNN(std::string dataPath, string _distance, float _radio, int _k, i
     // Esto se debe a que FastRNN trabaja únicamente con la distancia euclidiana.
     distance = "Euclidian";
     trans = new TransMonotoma(distance);
-    baseModel = new BaseModel(std::move(dataPath), ExpandRadio, _k, _num_data_points, _num_search, std::move(outputPath));
-
+    if(fromUser) {
+        baseModel = new BaseModel(std::move(dataPath), ExpandRadio, _k, _num_data_points, 1, std::move(outputPath), fromUser, myInput);
+    } else {
+        baseModel = new BaseModel(std::move(dataPath), ExpandRadio, _k, _num_data_points, _num_search, std::move(outputPath), fromUser, myInput);
+    }
     bool isTrueKnnModel = TrueKnn;
     auto* gpu_process = new CreateBVH(baseModel, isTrueKnnModel, distance);
     baseModel->create_tree(gpu_process);

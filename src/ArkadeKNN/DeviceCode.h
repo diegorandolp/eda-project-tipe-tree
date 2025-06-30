@@ -37,6 +37,10 @@ namespace EDA{
             pt[idx] = val;
 
         }
+         friend std::ostream& operator<<(std::ostream& os, const Point& point) {
+            os << "Point(" << point.pt.x << ", " << point.pt.y << ", " << point.pt.z << ")";
+            return os;
+        }
 
 
 

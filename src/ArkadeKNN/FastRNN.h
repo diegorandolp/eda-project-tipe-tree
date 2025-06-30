@@ -14,7 +14,7 @@ private:
     string distance;
 public:
     FastRNN(string dataPath, string distance, float _radio, int _k, int _num_data_points,
-            int _num_search, bool TrueKnn, string outputPath);
+            int _num_search, bool TrueKnn, string outputPath, bool fromUser, vector<float> myInput);
 
     friend std::ostream& operator<<(std::ostream& os, const FastRNN& model){
         cout << " \n\n\t ==================== Distancia A Utilizar ==================== \n\n";

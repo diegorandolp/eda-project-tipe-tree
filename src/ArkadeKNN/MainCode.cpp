@@ -14,9 +14,9 @@ int main(int ac, char **argv){
 
     string distance = "0";
 
-    ArkadeModel model(dataPath, distance, radio, k, num_data_points, num_search, withTrueKnn, outputPath);
+    //ArkadeModel model(dataPath, distance, radio, k, num_data_points, num_search, withTrueKnn, outputPath);
     //FastRNN model(dataPath, distance, radio, k, num_data_points, num_search, withTrueKnn, outputPath);
 
-    cout << model;
+    //cout << model;
 
 }

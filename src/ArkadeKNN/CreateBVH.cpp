@@ -19,8 +19,8 @@ CreateBVH::CreateBVH(BaseModel* _model, bool _isTrueKnnModel, string _distance) 
     module  = owlModuleCreate(context, DeviceCode_ptx);
 
     model = _model;
-    model->InitializeData();
 
+    model->InitializeData();
     n_neighbors.resize(model->get_num_search(), 0);
     results = GetResultsAndCreateBVH();
 }
