@@ -67,6 +67,7 @@ void BaseModel::InitializeData(){
         }
 
         EDA::Point pt;
+        pt.original_idx = TotalData;
         pt.pt = trans->transformar(pt.pt);
 
         for(int idx = 0; idx < cords.size(); ++idx)
@@ -106,6 +107,7 @@ void BaseModel::InitializeData(){
         EDA::Neigh vecino{};
         vecino.dist = FLOAT_MIN;
         vecino.idx = -1;
+        vecino.original_idx = -1;
 
         Vecinos.push_back(vecino);
     }
@@ -157,6 +159,24 @@ void BaseModel::printf(std::ostream& os) {
     os << "Numero de intersecciones: " << intersections << "\n";
     os << "Busqueda completada, escribiendo los resultados en el outputFile...\n";
 
+    std::string aux_filename = std::string(outputFile) + "aux";
+    std::ofstream aux_outfile(aux_filename);
+
+    aux_outfile << "Radio:" << radio << "\n";
+    aux_outfile << "Numero de puntos en total a utilizar:"<< num_data_points << "\n";
+    aux_outfile << "Numero de query points a utilizar:" << num_search << "\n";
+    aux_outfile << "Numero de vecinos por query point:" << k << "\n";
+
+    if(gpu_process->isTrueKNN())
+        aux_outfile << "Numero de rondas:" << gpu_process->GetNumRounds() << "\n";
+
+    aux_outfile << "Tiempo que tardo en procesar los datos:" << TimeToInitializeData << "\n";
+    aux_outfile << "Construccion del BVH:" << gpu_process->GetTimeCreateBVH() << "\n";
+    aux_outfile << "Filter & Refine:" << gpu_process->GetTimeRayGen() << "\n";
+    aux_outfile << "Numero de intersecciones:" << intersections << "\n";
+
+    aux_outfile.close();
+
     std::ofstream outfile(outputFile);
 
     // Cada k número de vecinos escritos serán los vecinos para el query point correspondiente
@@ -168,7 +188,7 @@ void BaseModel::printf(std::ostream& os) {
         for (int i = 0; i < k; i++) {
 
             // Cada grupo de k lines del OutputFile le pertenecerá a un Query Point.
-            outfile << results[j * k + i].idx << '\t' << results[j * k + i].dist << '\n';
+            outfile << results[j * k + i].original_idx << '\t' << results[j * k + i].dist << '\n';
         }
     }
 

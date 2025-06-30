@@ -20,12 +20,14 @@ namespace EDA{
     // Clase que guarda la información necesaria para el cálculo de los K vecinos más cercanos.
     struct Neigh{
         int idx;
+        int original_idx;
         float dist;
     };
 
     // Punto en el espacio 3D
     struct Point{
         vec3f pt;
+        int original_idx;
 
         void set_point(int idx, float val){
 

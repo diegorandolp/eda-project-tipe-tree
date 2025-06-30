@@ -146,6 +146,7 @@ OPTIX_INTERSECT_PROGRAM(Spheres)(){
     if (distance < param.res[max_idx].dist) {
         param.res[max_idx].dist = distance;
         param.res[max_idx].idx  = primID;
+        param.res[max_idx].original_idx = sphere.original_idx;
     }
 
 }
@@ -180,6 +181,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)(){
 
     for (int i = 0; i < k; ++i) {
         param.res[i].idx = -1;
+        param.res[i].original_idx = -1;
         param.res[i].dist = FLOAT_MAX;
     }
 
@@ -219,6 +221,7 @@ OPTIX_RAYGEN_PROGRAM(rayGen)(){
             // El rango de índices en el que se ubica sus vecinos es: [ID*KN : ID*(KN+1)]
             int outputIndex = xID * k + i;
             optixLaunchParams.frameBuffer[outputIndex].idx = param.res[i].idx;
+            optixLaunchParams.frameBuffer[outputIndex].original_idx = param.res[i].original_idx;
             optixLaunchParams.frameBuffer[outputIndex].dist = param.res[i].dist;
 
             num_neighbors += 1;
