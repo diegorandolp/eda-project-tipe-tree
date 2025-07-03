@@ -1,9 +1,9 @@
 Radio:20480
 Numero de puntos en total a utilizar:3023
 Numero de query points a utilizar:1
-Numero de vecinos por query point:10
+Numero de vecinos por query point:5
 Numero de rondas:11
-Tiempo que tardo en procesar los datos:0.002229
-Construccion del BVH:0.001547
-Filter & Refine:0.009989
-Numero de intersecciones:1107
+Tiempo que tardo en procesar los datos:0.002084
+Construccion del BVH:0.000605
+Filter & Refine:0.01848
+Numero de intersecciones:10176

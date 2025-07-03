@@ -18,7 +18,6 @@ from sklearn.decomposition import PCA
 from sklearn.datasets import fetch_lfw_people, fetch_olivetti_faces
 import tempfile
 import plotly.express as px
-
 # ---------ESTILOS----------
 def titulo_gud(y, x):
     st.markdown(f"""
@@ -36,7 +35,6 @@ def titulo_gud(y, x):
 
 
 #-----------PROCESAMIENTO-----------
-
 @st.cache_data
 def load_image_dataset(dataset_name):
     """Loads and caches a specified IMAGE dataset, resizing images to 64x64."""
@@ -48,7 +46,6 @@ def load_image_dataset(dataset_name):
         data = fetch_olivetti_faces()
         return data.images
     return None
-
 @st.cache_data
 def load_point_cloud(uploaded_file):
     """Loads a 3D point cloud from an uploaded text file."""
@@ -148,6 +145,12 @@ def plot_3d_neighbors(point_cloud, query_idx, neighbor_indices, title):
     df.loc[neighbor_indices, 'type'] = 'Neighbor'
     df.loc[query_idx, 'type'] = 'Query'
 
+    #normalize coordinates for better visualization
+    df['x'] = (df['x'] - df['x'].min()) / (df['x'].max() - df['x'].min())
+    df['y'] = (df['y'] - df['y'].min()) / (df['y'].max() - df['y'].min())
+    df['z'] = (df['z'] - df['z'].min()) / (df['z'].max() - df['z'].min())
+
+
 
     fig = px.scatter_3d(df, x='x', y='y', z='z', color='type', title=title,
                         color_discrete_map={
@@ -210,7 +213,7 @@ def main():
     st.sidebar.title("Parámetros KNN")
     # model_type not needed here, selected in each column
     num_neighbors = st.sidebar.slider("Número de vecinos (k)", 1, 50, 5)
-    distance_metric = st.sidebar.selectbox("Métrica de distancia", ["1", "2", "inf"], index=1,
+    distance_metric = st.sidebar.selectbox("Métrica de distancia", ["1", "2", "5", "0", "coseno"], index=1,
                                            help="1: Manhattan; 2: Euclidiana; inf: Chebyshev")
     search_radius = st.sidebar.number_input("Radio de búsqueda", min_value=0.1, max_value=100.0,
                                             value=10.0, step=0.1)
